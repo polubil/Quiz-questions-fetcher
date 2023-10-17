@@ -7,7 +7,7 @@
 1. Скопируйте Git-репозиторий и перейдите в директорию проекта:
 
    ```
-   git clone polubil/Quiz-questions-fetcher
+   git clone https://github.com/polubil/Quiz-questions-fetcher
    cd Quiz-questions-fetcher
    ```
 
