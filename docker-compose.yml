@@ -4,7 +4,6 @@ services:
 
   fastapi:
     build: .
-    container_name: fastapi
     restart: always
     links:
       - db
@@ -13,7 +12,6 @@ services:
 
   db:
     image: postgres:latest
-    container_name: postgres
     restart: always
     environment:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"

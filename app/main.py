@@ -1,15 +1,29 @@
 from datetime import datetime
+from time import sleep
 from typing import List, Annotated
 
 from fastapi import FastAPI, Depends, Body, HTTPException
 from pydantic import PositiveInt
+from sqlalchemy.exc import OperationalError
 
 from sqlalchemy.orm import Session
 import httpx
 
 from app.database import models, crud, database, schemas
 
-models.Base.metadata.create_all(bind=database.engine)
+
+max_retries, retries = 10, 0
+while 1:
+    try:
+        models.Base.metadata.create_all(bind=database.engine)
+        print("Подключено к базе данных.")
+        break
+    except OperationalError as e:
+        retries += 1
+        if max_retries <= retries:
+            raise e
+        print(f"База данных недоступна... Повторная попытка подключения через 10 секунд ({retries})...")
+        sleep(10)
 
 app = FastAPI()
 
@@ -45,7 +59,7 @@ async def root(db: Session = Depends(get_db)) -> dict[str, int]:
     :param db:
     :return:
     """
-    return {"total questions": crud.get_questions_amount(db)}
+    return {"total_questions": crud.get_questions_amount(db)}
 
 
 @app.get("/questions", response_model=list[schemas.Question])
@@ -78,7 +92,7 @@ async def add_questions(questions_num: Annotated[PositiveInt, Body(embed=True)],
     """
     "В случае, если в БД имеется такой же вопрос, к публичному API с викторинами должны выполняться дополнительные
     запросы (!)до тех пор, пока не будет получен уникальный вопрос для викторины(!)." при большом количестве запросов
-    может быть так, что большинство из них уже есть в базе, в результате мы будем получать слишком много
+    может быть так, что большинство из них (или все)  уже есть в базе, в результате мы будем получать слишком много
     дубликатов и, рано или поздно, если не ограничить максимальное количество попыток, может быть переполнение стека
     из-за большого количества рекурсивных вызовов функции. Но ограничение количества попыток противоречит ТЗ, поэтому
     оставляем так.
@@ -99,7 +113,7 @@ async def add_questions(questions_num: Annotated[PositiveInt, Body(embed=True)],
             question=i['question'],
             answer=i['answer'],
             created_at=i['created_at'],
-            collected=datetime.now(),
+            collected_at=datetime.now(),
         ))
     result = crud.add_questions(db, questions)
     print("Было", cnt, "повторяющихся вопросов.")

@@ -7,4 +7,4 @@ class Question(BaseModel):
     question: str
     answer: str
     created_at: datetime
-    collected: datetime
+    collected_at: datetime
