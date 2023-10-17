@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List, Annotated
 
 from fastapi import FastAPI, Depends, Body, HTTPException
+from pydantic import PositiveInt
 
 from sqlalchemy.orm import Session
 import httpx
@@ -58,7 +59,7 @@ async def get_questions(n: int = 1, db=Depends(get_db)):
     return crud.get_questions(db, n)
 
 
-@app.get("/question", response_model=schemas.Question)
+@app.get(".", response_model=schemas.Question)
 async def get_questions(id: int, db=Depends(get_db)):
     """
     Возврачает вопрос с определенным id.
@@ -73,7 +74,7 @@ async def get_questions(id: int, db=Depends(get_db)):
 
 
 @app.post("/add_questions", response_model=schemas.Question)
-async def add_questions(questions_num: Annotated[int, Body(embed=True)], db: Session = Depends(get_db)) -> dict:
+async def add_questions(questions_num: Annotated[PositiveInt, Body(embed=True)], db: Session = Depends(get_db)) -> dict:
     """
     "В случае, если в БД имеется такой же вопрос, к публичному API с викторинами должны выполняться дополнительные
     запросы (!)до тех пор, пока не будет получен уникальный вопрос для викторины(!)." при большом количестве запросов
