@@ -1,15 +1,28 @@
 from datetime import datetime
+from time import sleep
 from typing import List, Annotated
 
 from fastapi import FastAPI, Depends, Body, HTTPException
 from pydantic import PositiveInt
+from sqlalchemy.exc import OperationalError
 
 from sqlalchemy.orm import Session
 import httpx
 
 from app.database import models, crud, database, schemas
 
-models.Base.metadata.create_all(bind=database.engine)
+
+max_retries, retries = 10, 0
+while 1:
+    try:
+        models.Base.metadata.create_all(bind=database.engine)
+        break
+    except OperationalError as e:
+        retries += 1
+        if max_retries <= retries:
+            raise e
+        print(f"База данных недоступна... Повторная попытка подключения через 10 секунд ({retries})...")
+        sleep(10)
 
 app = FastAPI()
 
